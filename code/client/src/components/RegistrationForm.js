@@ -1,7 +1,12 @@
 import { Elements } from "@stripe/react-stripe-js";
 import { loadStripe } from "@stripe/stripe-js";
 import React, { useEffect, useRef, useState } from "react";
+import { Link } from "@reach/router";
+// Component
 import CardSetupForm from "./CardSetupForm";
+
+// function
+import { checkExistingCustomerProfile } from "../Services/customer";
 
 const RegistrationForm = (props) => {
   const { selected, details } = props;
@@ -24,6 +29,13 @@ const RegistrationForm = (props) => {
 
   const handleClickForPaymentElement = async () => {
     // TODO: Setup and Load Payment Element
+    checkExistingCustomerProfile({
+      learnerName,
+      learnerEmail,
+      setExistingCustomer,
+      setCustomerId,
+      setClientSecret
+    });
   };
 
   let body = null;
@@ -66,9 +78,7 @@ const RegistrationForm = (props) => {
                 placeholder="Name"
                 autoComplete="cardholder"
                 className="sr-input"
-                onChange={(e) =>
-                  handleChange(e.target.value, "learnerName")
-                }
+                onChange={(e) => handleChange(e.target.value, "learnerName")}
               />
             </div>
             <div className="lesson-input-box middle">
@@ -79,9 +89,7 @@ const RegistrationForm = (props) => {
                 value={learnerEmail}
                 placeholder="Email"
                 autoComplete="cardholder"
-                onChange={(e) => 
-                  handleChange(e.target.value, "learnerEmail")
-                }
+                onChange={(e) => handleChange(e.target.value, "learnerEmail")}
               />
             </div>
             <button
@@ -100,15 +108,16 @@ const RegistrationForm = (props) => {
             >
               A customer with that email address already exists. If you'd like
               to update the card on file, please visit{" "}
-              <span id="account_link">
-                <b>
-                  <a
-                    href={`localhost:3000/account-update/${existingCustomer.customerId}`}
-                  >
-                    account update
-                  </a>
-                </b>
-              </span>
+              <Link
+                to={`/account-update/${existingCustomer.customerId}`}
+                state={{ some: "value", existingCustomer }}
+              >
+                <span id="account_link">
+                  <b>
+                    <a>account update</a>
+                  </b>
+                </span>
+              </Link>
               {"\n"}
               <span id="error_message_customer_email">
                 {existingCustomer.customerEmail}

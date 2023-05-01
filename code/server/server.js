@@ -1,31 +1,42 @@
 /* eslint-disable no-console */
-const express = require('express');
+const express = require("express");
 
 const app = express();
-const { resolve } = require('path');
+const { resolve } = require("path");
 // Replace if using a different env file or config
-require('dotenv').config({ path: './.env' });
+require("dotenv").config({ path: "./.env" });
 const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
-const cors = require('cors');
-const { v4: uuidv4 } = require('uuid');
+const cors = require("cors");
+const { v4: uuidv4 } = require("uuid");
 
 const allitems = {};
-const fs = require('fs');
+const fs = require("fs");
+
+// controllers
+const {
+  addCustomer,
+  retrieveCustomer,
+  searchCustomer,
+} = require("./apis/controllers/customer.controller");
+const {
+  getCards,
+  addCardToCustomer,
+  retrieveCard
+} = require("./apis/controllers/card.controller");
+
 
 app.use(express.static(process.env.STATIC_DIR));
 
 app.use(
-  express.json(
-    {
-      // Should use middleware or a function to compute it only when
-      // hitting the Stripe webhook endpoint.
-      verify: (req, res, buf) => {
-        if (req.originalUrl.startsWith('/webhook')) {
-          req.rawBody = buf.toString();
-        }
-      },
+  express.json({
+    // Should use middleware or a function to compute it only when
+    // hitting the Stripe webhook endpoint.
+    verify: (req, res, buf) => {
+      if (req.originalUrl.startsWith("/webhook")) {
+        req.rawBody = buf.toString();
+      }
     },
-  ),
+  })
 );
 app.use(cors({ origin: true }));
 
@@ -38,13 +49,13 @@ app.post("/webhook", async (req, res) => {
 });
 
 // Routes
-app.get('/', (req, res) => {
+app.get("/", (req, res) => {
   try {
     const path = resolve(`${process.env.STATIC_DIR}/index.html`);
     if (!fs.existsSync(path)) throw Error();
     res.sendFile(path);
   } catch (error) {
-    const path = resolve('./public/static-file-error.html');
+    const path = resolve("./public/static-file-error.html");
     res.sendFile(path);
   }
 });
@@ -64,14 +75,84 @@ app.get("/config", (req, res) => {
 
 // Milestone 1: Signing up
 // Shows the lesson sign up page.
-app.get('/lessons', (req, res) => {
+app.get("/lessons", (req, res) => {
+  console.log("process.env.STATIC_DIR ---> ", process.env.STATIC_DIR);
+  res.json({ customerId: 1, customerName: "Pisit" });
   try {
     const path = resolve(`${process.env.STATIC_DIR}/lessons.html`);
     if (!fs.existsSync(path)) throw Error();
     res.sendFile(path);
   } catch (error) {
-    const path = resolve('./public/static-file-error.html');
+    const path = resolve("./public/static-file-error.html");
     res.sendFile(path);
+  }
+});
+
+app.get("/customers", (req, res) => {
+  res.json({ customerId: 1, customerName: "Pisit" });
+});
+
+app.get("/customers/search", async (req, res) => {
+  try {
+    if (!req?.query)
+      return { devMessage: "Parameter customerId Invaild" };
+
+    const query = req?.query;
+    const resp = await searchCustomer(query);
+
+    res.json(resp);
+  } catch (error) {
+    res.json(error);
+  }
+});
+
+app.get("/customers/:customerId", async (req, res) => {
+  try {
+    if (!req?.params?.customerId)
+      return { devMessage: "Parameter customerId Invaild" };
+
+    const customerId = req?.params?.customerId;
+    const resp = await retrieveCustomer({ customerId });
+
+    res.json(resp);
+  } catch (error) {
+    res.json(error);
+  }
+});
+
+app.post("/customers", async (req, res) => {
+  try {
+    const resp = await addCustomer();
+    res.json(resp);
+  } catch (error) {
+    res.json(error);
+  }
+});
+
+app.get("/customers/:customerId/source", async (req, res) => {
+  try {
+    const resp = await getCards(req);
+    res.json(resp);
+  } catch (error) {
+    res.json(error);
+  }
+});
+
+app.post("/customers/:customerId/source", async (req, res) => {
+  try {
+    const resp = await addCardToCustomer(req);
+    res.json(resp);
+  } catch (error) {
+    res.json(error);
+  }
+});
+
+app.get("/customers/:customerId/source/:cardId", async (req, res) => {
+  try {
+    const resp = await retrieveCard(req);
+    res.json(resp);
+  } catch (error) {
+    res.json(error);
   }
 });
 
@@ -108,7 +189,6 @@ app.get('/lessons', (req, res) => {
 app.post("/schedule-lesson", async (req, res) => {
   // TODO: Integrate Stripe
 });
-
 
 // Milestone 2: '/complete-lesson-payment'
 // Capture a payment for a lesson.
@@ -179,11 +259,10 @@ app.get("/account-update/:customer_id", async (req, res) => {
     if (!fs.existsSync(path)) throw Error();
     res.sendFile(path);
   } catch (error) {
-    const path = resolve('./public/static-file-error.html');
+    const path = resolve("./public/static-file-error.html");
     res.sendFile(path);
   }
 });
-
 
 // Milestone 3: '/delete-account'
 // Deletes a customer object if there are no uncaptured payment intents for them.
@@ -217,7 +296,6 @@ app.post("/delete-account/:customer_id", async (req, res) => {
   // TODO: Integrate Stripe
 });
 
-
 // Milestone 4: '/calculate-lesson-total'
 // Returns the total amounts for payments for lessons, ignoring payments
 // for videos and concert tickets, ranging over the last 36 hours.
@@ -235,7 +313,6 @@ app.post("/delete-account/:customer_id", async (req, res) => {
 app.get("/calculate-lesson-total", async (req, res) => {
   // TODO: Integrate Stripe
 });
-
 
 // Milestone 4: '/find-customers-with-failed-payments'
 // Returns any customer who meets the following conditions:
@@ -279,4 +356,6 @@ function errorHandler(err, req, res, next) {
 
 app.use(errorHandler);
 
-app.listen(4242, () => console.log(`Node server listening on port http://localhost:${4242}`));
+app.listen(4242, () =>
+  console.log(`Node server listening on port http://localhost:${4242}`)
+);

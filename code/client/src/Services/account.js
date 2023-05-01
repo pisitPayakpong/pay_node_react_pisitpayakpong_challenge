@@ -1,15 +1,13 @@
-export const accountUpdate = async (id) => {
-  const response = await fetch(`/payment-method/${id}`, {
-    method: "get",
-    headers: {
-      "Content-Type": "application/json",
-    },
-  });
-  if (!response.ok) {
-    console.log(response);
+import axios from "axios";
+const apiUrl = `http://localhost:4242`;
+export const accountUpdate = async (customerId, cardId) => {
+  console.log("customerId > ",customerId);
+  console.log("cardId > ",cardId);
+  const response = await axios.get(`${apiUrl}/customers/${customerId}/source/${cardId}`);
+
+  if (!response.data) {
     console.log("Account Update: Error happened while fetching data");
     return null;
   }
-  const data = await response.json();
-  return data;
+  return response?.data;
 };

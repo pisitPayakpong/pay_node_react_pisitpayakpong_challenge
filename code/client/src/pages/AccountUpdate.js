@@ -3,15 +3,24 @@ import Header from "../components/Header";
 import UpdateCustomer from "../components/UpdateCustomer";
 import "../css/lessons.scss";
 import { accountUpdate } from "../Services/account";
+import { isEmpty } from "lodash";
 
 //Component responsable to update user's info.
-const AccountUpdate = ({ id }) => {
+const AccountUpdate = (props) => {
+  const {
+    id,
+    location: {
+      state: {
+        existingCustomer: { defaultCardId },
+      },
+    },
+  } = props;
   const [data, setData] = useState({});
 
   //Get info to load page, User payment information, config API route in package.json "proxy"
   useEffect(() => {
     const setup = async () => {
-      const result = await accountUpdate(id);
+      const result = await accountUpdate(id, defaultCardId);
       if (result !== null) {
         setData(result);
       }
@@ -25,6 +34,17 @@ const AccountUpdate = ({ id }) => {
       setData(result);
     }
   };
+
+  console.log("data >", data);
+
+  if (isEmpty(data))
+    return (
+      <>
+        <div className="spinner" id="spinner">
+          Loading Data
+        </div>
+      </>
+    );
 
   return (
     <main className="main-lessons">
