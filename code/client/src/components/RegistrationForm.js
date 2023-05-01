@@ -2,6 +2,8 @@ import { Elements } from "@stripe/react-stripe-js";
 import { loadStripe } from "@stripe/stripe-js";
 import React, { useEffect, useRef, useState } from "react";
 import { Link } from "@reach/router";
+import moment from 'moment'
+import axios from "axios";
 // Component
 import CardSetupForm from "./CardSetupForm";
 
@@ -18,8 +20,16 @@ const RegistrationForm = (props) => {
   const [customerId, setCustomerId] = useState(null);
   const [clientSecret, setClientSecret] = useState(null);
   const stripePromise = useRef(null);
-  let appearance = null;
+
   // TODO: Integrate Stripe
+
+  const appearance = {
+    theme: "stripe",
+  };
+  const options = {
+    clientSecret,
+    appearance,
+  };
 
   const handleChange = async (value, field) => {
     //TODO: Handle the checkout event
@@ -29,12 +39,14 @@ const RegistrationForm = (props) => {
 
   const handleClickForPaymentElement = async () => {
     // TODO: Setup and Load Payment Element
+    const firstLessonDate = moment().format('YYYY-MM-DD h:mm:ss');;
     checkExistingCustomerProfile({
       learnerName,
       learnerEmail,
       setExistingCustomer,
       setCustomerId,
-      setClientSecret
+      setClientSecret,
+      firstLessonDate
     });
   };
 
@@ -42,10 +54,7 @@ const RegistrationForm = (props) => {
   if (selected === -1) return body;
   if (clientSecret) {
     body = (
-      <Elements
-        stripe={stripePromise.current}
-        options={{ appearance, clientSecret }}
-      >
+      <Elements stripe={stripePromise.current} options={options}>
         <CardSetupForm
           selected={selected}
           mode="setup"

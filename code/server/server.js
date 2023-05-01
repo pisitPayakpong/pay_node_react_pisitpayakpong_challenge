@@ -23,6 +23,7 @@ const {
   addCardToCustomer,
   retrieveCard
 } = require("./apis/controllers/card.controller");
+const { createPaymentIntents } = require("./apis/controllers/payment.controller")
 
 
 app.use(express.static(process.env.STATIC_DIR));
@@ -122,7 +123,7 @@ app.get("/customers/:customerId", async (req, res) => {
 
 app.post("/customers", async (req, res) => {
   try {
-    const resp = await addCustomer();
+    const resp = await addCustomer(req);
     res.json(resp);
   } catch (error) {
     res.json(error);
@@ -154,6 +155,17 @@ app.get("/customers/:customerId/source/:cardId", async (req, res) => {
   } catch (error) {
     res.json(error);
   }
+});
+
+app.post("/create-payment-intent", async (req, res) => {
+  const { items } = req?.body;
+
+  // Create a PaymentIntent with the order amount and currency
+  const paymentIntent = await createPaymentIntents(req, items);
+
+  res.send({
+    clientSecret: paymentIntent.client_secret,
+  });
 });
 
 // TODO: Integrate Stripe

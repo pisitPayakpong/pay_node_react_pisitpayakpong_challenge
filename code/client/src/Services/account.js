@@ -11,3 +11,15 @@ export const accountUpdate = async (customerId, cardId) => {
   }
   return response?.data;
 };
+
+export const createAccount = async (customerId, setLast4) => {
+  const response = await axios.post(`${apiUrl}/customers/${customerId}/source`);
+
+  console.log("response > ",response);
+  if (!response.data) {
+    console.log("Account Update: Error happened while fetching data");
+    return null;
+  }
+  setLast4(response.data?.last4);
+  return response?.data;
+};
